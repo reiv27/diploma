@@ -1,7 +1,11 @@
+import sys
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Range
 from std_msgs.msg import Int16MultiArray
+
+
+data_file = open(f'/home/user/Projects/diploma/sim_ws/src/ultrasonic/data/{sys.argv[1]}.txt', 'w')
 
 
 class UltrasonicData(Node):  # Class for sonars
@@ -13,10 +17,11 @@ class UltrasonicData(Node):  # Class for sonars
         self.results = Int16MultiArray()
         self.results.data = [0, 0, 0, 0, 0,  # Array of data in mm
                              0, 0, 0, 0, 0]
-        
+
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        
+        self.i = 1
+
         # Front sonars
         self.s1 = self.create_subscription(
             Range,
@@ -161,12 +166,14 @@ class UltrasonicData(Node):  # Class for sonars
             self.results.data[5] = -1
         else:
             self.results.data[5] = int(round(msg.range*1000))
-    
+
     # Callback for publisher's timer
     def timer_callback(self):
         self.pub.publish(self.results)
-        print(self.results.data)
-        
+        print(f'{self.i} {self.results.data}')
+        data_file.write(f'{self.i} {self.results.data}\n')
+        self.i += 1
+
 
 def main(args=None):
 
@@ -177,6 +184,8 @@ def main(args=None):
     rclpy.spin(data_taking)
 
     data_taking.destroy_node()
+    data_file.close()
+
     rclpy.shutdown()
 
 
